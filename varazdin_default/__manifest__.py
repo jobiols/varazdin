@@ -9,6 +9,7 @@ Varazdin
 ========
     """,
     'category': 'Default',
+    'author': 'jeo Software,',
     'website': 'http://www.jeosoft.com',
     'images' : [],
     'depends' : ['stock'],
