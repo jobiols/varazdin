@@ -13,8 +13,12 @@ Varazdin
     'website': 'http://www.jeosoft.com',
     'images' : [],
     'depends' : ['stock'],
-    'data': [  ],
-    'demo': [  ],
+    'data': [
+        'views/simple_picking.xml'
+    ],
+    'demo': [
+
+    ],
     'installable': True,
     'application': False,
     'auto_install': False,

@@ -1,0 +1,183 @@
+# -*- coding: utf-8 -*-
+
+import logging
+
+from odoo import api, fields, models, _
+from odoo.exceptions import UserError
+
+logger = logging.getLogger(__name__)
+
+
+class Picking(models.Model):
+    _inherit = "stock.picking"
+
+    simple_qty = fields.Float('Cantidad', compute='_get_simple_qty')
+
+    @api.multi
+    def _get_simple_qty(self):
+        simple_qty = 0
+        for rec in self:
+            for mov in rec.pack_operation_ids:
+                simple_qty += mov.qty_done
+            rec.simple_qty = simple_qty
+
+    @api.multi
+    def test_move(self):
+        logger.info('New TEST Move')
+
+        default_code = 'V1'
+        source = 'varazdin'
+        dest = 'La Vasca'
+        obs = 'observaciones vascas'
+        prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
+        if not prod_id:
+            logger.error('bad product code %s', default_code)
+
+        #        source_id = self.env['stock.location'].search([('location_id.name', '=', source)])
+        source_id = self.env['stock.location'].search([('name', '=', source)])
+        if not source_id:
+            logger.error('bad source location %s', source)
+
+        #        dest_id = self.env['stock.location'].search([('location_id.name', '=', dest)])
+        dest_id = self.env['stock.location'].search([('name', '=', dest)])
+        if not source_id:
+            logger.error('bad destination location %s', dest)
+
+        qty = 3
+        self.do_programatic_simple_transfer(source_id, dest_id, prod_id, qty, obs)
+
+    @api.multi
+    def do_programatic_simple_transfer(self, source_id, dest_id, prod_id, qty, obs):
+
+        logger.info('source %s, dest %s, prod %s, qty %s, %s', source_id.name, dest_id.name, prod_id.name, str(qty), obs)
+        # crear el picking
+        pick = self.create({
+            'name': self.env['ir.sequence'].next_by_code('varazdin.move'),
+            'location_id': source_id.id,
+            'location_dest_id': dest_id.id,
+            'min_date': fields.Datetime.now(),
+            'origin': obs,
+            'move_type': 'one',
+            'picking_type_id': 5
+        })
+
+        pick.pack_operation_ids.create({
+            'product_uom_id': prod_id.uom_id.id,
+            'picking_id': pick.id,
+            'product_id': prod_id.id,
+            'product_qty': qty,
+            'qty_done': qty,
+            'date': fields.Datetime.now(),
+            'location_id': source_id.id,
+            'location_dest_id': dest_id.id,
+        })
+
+        # crear el inmediate transfer
+        wiz = self.env['stock.immediate.transfer'].create({'pick_id': pick.id})
+        # If still in draft => confirm and assign
+
+        if wiz.pick_id.state == 'draft':
+            wiz.pick_id.action_confirm()
+
+            if wiz.pick_id.state != 'assigned':
+                wiz.pick_id.action_assign()
+                if wiz.pick_id.state != 'assigned':
+                    raise UserError(_(
+                            "Could not reserve all requested products. Please use the \'Mark as Todo\' button to handle the reservation manually."))
+
+        for pack in wiz.pick_id.pack_operation_ids:
+            if pack.product_qty > 0:
+                pack.write({'qty_done': pack.product_qty})
+            else:
+                pack.unlink()
+
+        wiz.pick_id.do_transfer()
+
+    @api.multi
+    def do_new_simple_transfer(self):
+
+        for pick in self:
+            pack_operations_delete = self.env['stock.pack.operation']
+            if not pick.move_lines and not pick.pack_operation_ids:
+                raise UserError(('Por favor ingrese productos y cantidades a transferir.'))
+
+            # este chequeo pasa bien, se podría sacar, pickking type es transferencias internas.
+            # In draft or with no pack operations edited yet, ask if we can just do everything
+            if pick.state == 'draft' or all([x.qty_done == 0.0 for x in pick.pack_operation_ids]):
+                # If no lots when needed, raise error
+                picking_type = pick.picking_type_id
+                if (picking_type.use_create_lots or picking_type.use_existing_lots):
+                    for pack in pick.pack_operation_ids:
+                        if pack.product_id and pack.product_id.tracking != 'none':
+                            raise UserError(
+                                    _('Some products require lots/serial numbers, so you need to specify those first!'))
+
+                view = self.env.ref('stock.view_immediate_transfer')
+                wiz = self.env['stock.immediate.transfer'].create({'pick_id': pick.id})
+
+                """
+                # TDE FIXME: a return in a loop, what a good idea. Really.
+                return {
+                    'name': _('Immediate Transfer?'),
+                    'type': 'ir.actions.act_window',
+                    'view_type': 'form',
+                    'view_mode': 'form',
+                    'res_model': 'stock.immediate.transfer',
+                    'views': [(view.id, 'form')],
+                    'view_id': view.id,
+                    'target': 'new',
+                    'res_id': wiz.id,
+                    'context': self.env.context,
+                }
+                """
+
+                # If still in draft => confirm and assign
+                if wiz.pick_id.state == 'draft':
+                    wiz.pick_id.action_confirm()
+
+                    if wiz.pick_id.state != 'assigned':
+                        wiz.pick_id.action_assign()
+                        if wiz.pick_id.state != 'assigned':
+                            raise UserError(_(
+                                    "Could not reserve all requested products. Please use the \'Mark as Todo\' button to handle the reservation manually."))
+
+                for pack in wiz.pick_id.pack_operation_ids:
+                    if pack.product_qty > 0:
+                        pack.write({'qty_done': pack.product_qty})
+                    else:
+                        pack.unlink()
+                wiz.pick_id.do_transfer()
+
+            return
+            """
+            # Check backorder should check for other barcodes
+            if pick.check_backorder():
+                view = self.env.ref('stock.view_backorder_confirmation')
+                wiz = self.env['stock.backorder.confirmation'].create({'pick_id': pick.id})
+                # TDE FIXME: same reamrk as above actually
+                return {
+                    'name': _('Create Backorder?'),
+                    'type': 'ir.actions.act_window',
+                    'view_type': 'form',
+                    'view_mode': 'form',
+                    'res_model': 'stock.backorder.confirmation',
+                    'views': [(view.id, 'form')],
+                    'view_id': view.id,
+                    'target': 'new',
+                    'res_id': wiz.id,
+                    'context': self.env.context,
+                }
+            for operation in pick.pack_operation_ids:
+                if operation.qty_done < 0:
+                    raise UserError(_('No negative quantities allowed'))
+                if operation.qty_done > 0:
+                    operation.write({'product_qty': operation.qty_done})
+                else:
+                    pack_operations_delete |= operation
+            if pack_operations_delete:
+                pack_operations_delete.unlink()
+            """
+
+        print 'antes de do transfer >>>>>>>>>>>>>>>>>>>>>>'
+        self.do_transfer()
+        return
