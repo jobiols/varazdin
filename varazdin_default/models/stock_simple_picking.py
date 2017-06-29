@@ -14,42 +14,44 @@ class Picking(models.Model):
     simple_qty = fields.Float('Cantidad', compute='_get_simple_qty')
 
     @api.multi
-    def _get_simple_qty(self):
-        simple_qty = 0
-        for rec in self:
-            for mov in rec.pack_operation_ids:
-                simple_qty += mov.qty_done
-            rec.simple_qty = simple_qty
-
-    @api.multi
     def test_move(self):
         logger.info('New TEST Move')
 
-        default_code = 'V1'
         source = 'varazdin'
         dest = 'La Vasca'
-        obs = 'observaciones vascas'
+        obs = 'ADK-FFD-888*-*'
+
+        moves = []
+        default_code = 'V1'
         prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
         if not prod_id:
             logger.error('bad product code %s', default_code)
+        moves.append({
+            'prod_id': prod_id,
+            'qty': 34
+        })
 
-        #        source_id = self.env['stock.location'].search([('location_id.name', '=', source)])
+        default_code = 'V100'
+        prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
+        if not prod_id:
+            logger.error('bad product code %s', default_code)
+        moves.append({
+            'prod_id': prod_id,
+            'qty': 200
+        })
+
         source_id = self.env['stock.location'].search([('name', '=', source)])
         if not source_id:
             logger.error('bad source location %s', source)
 
-        #        dest_id = self.env['stock.location'].search([('location_id.name', '=', dest)])
         dest_id = self.env['stock.location'].search([('name', '=', dest)])
         if not source_id:
             logger.error('bad destination location %s', dest)
-
-        qty = 3
-        self.do_programatic_simple_transfer(source_id, dest_id, prod_id, qty, obs)
+        self.do_programatic_simple_transfer(source_id, dest_id, moves, obs)
 
     @api.multi
-    def do_programatic_simple_transfer(self, source_id, dest_id, prod_id, qty, obs):
+    def do_programatic_simple_transfer(self, source_id, dest_id, moves, obs):
 
-        logger.info('source %s, dest %s, prod %s, qty %s, %s', source_id.name, dest_id.name, prod_id.name, str(qty), obs)
         # crear el picking
         pick = self.create({
             'name': self.env['ir.sequence'].next_by_code('varazdin.move'),
@@ -61,16 +63,24 @@ class Picking(models.Model):
             'picking_type_id': 5
         })
 
-        pick.pack_operation_ids.create({
-            'product_uom_id': prod_id.uom_id.id,
-            'picking_id': pick.id,
-            'product_id': prod_id.id,
-            'product_qty': qty,
-            'qty_done': qty,
-            'date': fields.Datetime.now(),
-            'location_id': source_id.id,
-            'location_dest_id': dest_id.id,
-        })
+        for move in moves:
+            logger.info('source %s, dest %s, prod %s, qty %s, %s',
+                        source_id.name,
+                        dest_id.name,
+                        move['prod_id'].name,
+                        str(move['qty']),
+                        obs)
+
+            pick.pack_operation_ids.create({
+                'product_uom_id': move['prod_id'].uom_id.id,
+                'picking_id': pick.id,
+                'product_id': move['prod_id'].id,
+                'product_qty': move['qty'],
+                'qty_done': move['qty'],
+                'date': fields.Datetime.now(),
+                'location_id': source_id.id,
+                'location_dest_id': dest_id.id,
+            })
 
         # crear el inmediate transfer
         wiz = self.env['stock.immediate.transfer'].create({'pick_id': pick.id})

@@ -14,7 +14,11 @@ Varazdin
     'images' : [],
     'depends' : ['stock'],
     'data': [
-        'views/simple_picking.xml'
+        'views/simple_picking.xml',
+        'views/config_settings_view.xml',
+        'views/courier_view.xml',
+        'views/location_view.xml',
+        'views/route_view.xml'
     ],
     'demo': [
 

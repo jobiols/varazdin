@@ -1,0 +1,16 @@
+courier
+    _id : String ( es un hash interno )
+    denominacion: String, Nombre / dni / patente / cualquier dato que identifique al tipo que va a usar el app
+    user: String , es el usuario del app android/ios
+    active: Boolean, indica si esta o no activo
+
+courierPackage
+	"date":"2017-06-25T12:57:12.965Z",
+	"courierId":"594ec96190d1872408e4b37f",  <- ID Interno de Trasportes
+	"packTypeId":"594ec98490d1872408e4b380"	, <- ID Interno de paquetes
+	"name":"NOMBRE DEL BAR",
+	"code":	"TOMESTAMP DEBE SER UNIQUE",
+	"address":"Direccion del bar",
+	"notes" : "Si queres poner algun dato"	,
+	"gpsmandatory":true,
+

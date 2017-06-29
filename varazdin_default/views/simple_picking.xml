@@ -13,9 +13,6 @@
                 <xpath expr="//field[@name='location_dest_id']" position="attributes">
                     <attribute name="string">Destino</attribute>
                 </xpath>
-                <xpath expr="//field[@name='location_dest_id']" position="after">
-                    <field name="simple_qty"/>
-                </xpath>
                 <xpath expr="//field[@name='origin']" position="attributes">
                     <attribute name="string">Camioneta</attribute>
                 </xpath>

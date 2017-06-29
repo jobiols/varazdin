@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <!-- Form view  -->
+        <record model="ir.ui.view" id="courier_view_form">
+            <field name="name">Transportes</field>
+            <field name="model">courier</field>
+            <field name="arch" type="xml">
+              <form string="Transportes">
+                  <group>
+                    <field name="name"/>
+                    <field name="user"/>
+                    <field name="active"/>
+                  </group>
+              </form>
+            </field>
+        </record>
+
+
+        <!-- List View -->
+        <record id="courier_list_view" model="ir.ui.view">
+            <field name="name">courier.list</field>
+            <field name="model">courier</field>
+            <field name="priority">1</field>
+            <field name="arch" type="xml">
+                <tree string="Transportes">
+                    <field name="name"/>
+                    <field name="user"/>
+                    <field name="active"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_varazdin_couriers" model="ir.actions.act_window">
+            <field name="name">Lista de transportes</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">courier</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click para agregar un transporte.
+              </p><p>
+                Un transporte es lo que va a llevar y regoger la mercaderia
+              </p>
+            </field>
+        </record>
+
+        <!-- Menu -->
+        <!--
+        <menuitem id="menu_varazdin_courier"
+                  name="Transportes ***"
+                  parent="stock.menu_stock_root"
+                  sequence="200"/>
+-->
+        <menuitem id="menu_varazdin_courier"
+                  name="Transportes"
+                  parent="menu_varazdin_general_settings"
+                  sequence="1" action="action_varazdin_couriers"
+                  groups="base.group_system"/>
+    </data>
+</odoo>
+

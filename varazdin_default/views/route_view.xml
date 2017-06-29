@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <!-- Form view  -->
+        <record model="ir.ui.view" id="route_view_form">
+            <field name="name">Rutas</field>
+            <field name="model">route</field>
+            <field name="arch" type="xml">
+              <form string="Rutas">
+                  <group>
+                    <field name="date"/>
+                    <field name="location_id" domain="[('usage','=','internal')]"/>
+                    <field name="courier_id"/>
+                  </group>
+              </form>
+            </field>
+        </record>
+
+        <!-- List View -->
+        <record id="route_list_view" model="ir.ui.view">
+            <field name="name">route.list</field>
+            <field name="model">route</field>
+            <field name="priority">1</field>
+            <field name="arch" type="xml">
+                <tree string="Rutas">
+                    <field name="date"/>
+                    <field name="location_id"/>
+                    <field name="courier_id"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Action -->
+        <record id="action_varazdin_routes" model="ir.actions.act_window">
+            <field name="name">Rutas de los transportes</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">route</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click para agregar una ruta.
+              </p><p>
+                Una ruta indica donde tiene que ir un transporte en un dia determinado
+              </p>
+            </field>
+        </record>
+
+        <!-- Menu -->
+
+        <menuitem id="menu_varazdin_route" name="Rutas"
+                  parent="menu_varazdin_general_settings"
+                  sequence="10" action="action_varazdin_routes"
+                  groups="base.group_system"/>
+
+    </data>
+</odoo>
