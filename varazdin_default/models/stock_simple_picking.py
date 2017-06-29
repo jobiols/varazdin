@@ -19,7 +19,7 @@ class Picking(models.Model):
 
         source = 'varazdin'
         dest = 'La Vasca'
-        obs = 'ADK-FFD-888*-*'
+        obs = 'ADK-FFD-888*-'
 
         moves = []
         default_code = 'V1'

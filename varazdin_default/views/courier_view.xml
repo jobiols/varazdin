@@ -5,13 +5,14 @@
         <!-- Form view  -->
         <record model="ir.ui.view" id="courier_view_form">
             <field name="name">Transportes</field>
-            <field name="model">courier</field>
+            <field name="model">varazdin_default.courier</field>
             <field name="arch" type="xml">
               <form string="Transportes">
                   <group>
                     <field name="name"/>
                     <field name="user"/>
                     <field name="active"/>
+                    <field name="secupack_id"/>
                   </group>
               </form>
             </field>
@@ -21,13 +22,14 @@
         <!-- List View -->
         <record id="courier_list_view" model="ir.ui.view">
             <field name="name">courier.list</field>
-            <field name="model">courier</field>
+            <field name="model">varazdin_default.courier</field>
             <field name="priority">1</field>
             <field name="arch" type="xml">
                 <tree string="Transportes">
                     <field name="name"/>
                     <field name="user"/>
                     <field name="active"/>
+                    <field name="secupack_id"/>
                 </tree>
             </field>
         </record>
@@ -36,7 +38,7 @@
         <record id="action_varazdin_couriers" model="ir.actions.act_window">
             <field name="name">Lista de transportes</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">courier</field>
+            <field name="res_model">varazdin_default.courier</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
             <field name="help" type="html">

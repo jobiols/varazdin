@@ -4,7 +4,7 @@
         <!-- Form view  -->
         <record model="ir.ui.view" id="route_view_form">
             <field name="name">Rutas</field>
-            <field name="model">route</field>
+            <field name="model">varazdin_default.route</field>
             <field name="arch" type="xml">
               <form string="Rutas">
                   <group>
@@ -19,13 +19,14 @@
         <!-- List View -->
         <record id="route_list_view" model="ir.ui.view">
             <field name="name">route.list</field>
-            <field name="model">route</field>
+            <field name="model">varazdin_default.route</field>
             <field name="priority">1</field>
             <field name="arch" type="xml">
-                <tree string="Rutas">
+                <tree string="Rutas" delete="false">
                     <field name="date"/>
                     <field name="location_id"/>
                     <field name="courier_id"/>
+                    <field name="secupack_ans"/>
                 </tree>
             </field>
         </record>
@@ -34,7 +35,7 @@
         <record id="action_varazdin_routes" model="ir.actions.act_window">
             <field name="name">Rutas de los transportes</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">route</field>
+            <field name="res_model">varazdin_default.route</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree,form</field>
             <field name="help" type="html">

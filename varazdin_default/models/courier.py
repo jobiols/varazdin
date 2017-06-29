@@ -18,30 +18,80 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # -----------------------------------------------------------------------------------
-from odoo import api, fields, models
+import logging
+
+from odoo import fields, models, api
 from odoo.addons.varazdin_default.secupack_lib.secupack import SecupackClient
-from odoo.exceptions import Warning
+
+logger = logging.getLogger(__name__)
 
 
 class Courier(models.Model):
-    _name = 'courier'
+    _name = 'varazdin_default.courier'
     _description = "Couriers"
 
     secupack_id = fields.Char(
-        help=u'Hash interno de la plataforma'
+            help=u'Hash interno de la plataforma'
     )
     name = fields.Char(
-        help=u'Dominio del vehículo',
-        string=u'Dominio',
-        required=True,
-        index=True
+            help=u'Dominio del vehículo',
+            string=u'Dominio',
+            required=True,
+            index=True
     )
     user = fields.Char(
-        help=u'Usuario de la app android / ios',
-        string=u'Usuario'
+            help=u'Usuario de la app android / ios',
+            string=u'Usuario'
     )
     active = fields.Boolean(
-        help=u'Indica si el usuario está activo',
-        string='Activo',
-        default=True
+            help=u'Indica si el usuario está activo',
+            string='Activo',
+            default=True
     )
+
+    @api.one
+    def do_sync(self):
+        print 'ejecutando do sync'
+        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
+        client = SecupackClient(user=conf.default_user, password=conf.default_password, debug=True)
+        if client.logged():
+            print 'logged!!!!!!!!!!!!!!!!!---'
+            data = {
+                'denomination': self.name,
+                'user': self.user,
+                'active': self.active
+            }
+            print 'esta es mi data', data
+            # hacer alta o modificación según tenga o no el id
+            print 'este es secupack', self.secupack_id
+            if self.secupack_id:
+                print 'modificacion--'
+                a = client.set_courier(data=data, id=self.secupack_id)
+            else:
+                print 'alta --- '
+                self.secupack_id = client.set_courier(data=data)
+
+    @api.multi
+    def sync(self):
+        """ Sincroniza el modelo con la plataforma, corre cada tanto
+            lanzado por las acciones planificadas
+        """
+        logger.info(u'Ejecutando sync')
+        print '----------------------------SYNC---------------------------------------'
+
+        # obtener la fecha de la última sincronizacion
+        last_sync = self.env['ir.config_parameter'].get_param("courier.last.sync")
+        # obtener todos los registros a actualizar
+        domain = [('write_date', '>', last_sync)] if last_sync else []
+        last_sync = fields.Datetime.now()
+
+        try:
+            to_update = self.env['varazdin_default.courier'].search(domain)
+            for rec in to_update:
+                rec.do_sync()
+
+            # guardar la fecha de la última sincronizacion
+            self.env['ir.config_parameter'].set_param("courier.last.sync", last_sync)
+        except:
+            raise
+            logger.error(u'Fallo la sincronizacion')

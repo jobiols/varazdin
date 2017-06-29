@@ -22,6 +22,9 @@ from odoo import api, fields, models
 from odoo.addons.varazdin_default.secupack_lib.secupack import SecupackClient
 from odoo.exceptions import Warning
 
+# tutorial
+# http://ludwiktrammer.github.io/odoo/custom-settings-odoo.html
+
 
 class AppSettings(models.TransientModel):
     _name = 'varazdin_default.config.settings'
@@ -53,7 +56,6 @@ class AppSettings(models.TransientModel):
 
     @api.one
     def test_connection(self):
-        print 'user', self.default_user, 'password', self.default_password
         client = SecupackClient(user=self.default_user, password=self.default_password)
         if client.logged():
             raise Warning(u'Conexión exitosa')
