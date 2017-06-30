@@ -22,6 +22,7 @@ import logging
 
 from odoo import api, fields, models
 from odoo.addons.varazdin_default.secupack_lib.secupack import SecupackClient
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -64,13 +65,16 @@ class Route(models.Model):
         print 'ejecutando do sync'
         conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
         client = SecupackClient(user=conf.default_user, password=conf.default_password)
+
+        print '>>>>>>>>>', self.date
+#        dt = datetime.strptime(self.date, '%Y-%m-%d').utcnow().isoformat
         if client.logged():
             data = {
                 'date': self.date,
                 'courierId': self.courier_id.secupack_id,  # <- ID Interno de Trasportes
                 'packTypeId': conf.default_pack_type_id,  # <- ID Interno de paquetes
                 'name': self.location_id.name,
-                'code': fields.Datetime.now()+str(self.id),
+                'code': datetime.datetime.utcnow().isoformat() + str(self.id),
                 'address': self.location_id.partner_id.street if self.location_id.partner_id else False,
                 'gpsmandatory': False,
             }
@@ -90,7 +94,7 @@ class Route(models.Model):
         last_sync = self.env['ir.config_parameter'].get_param("route.last.sync")
         # obtener todos los registros a actualizar
         domain = [('write_date', '>', last_sync)] if last_sync else []
-        last_sync = fields.Datetime.now()
+        last_sync = datetime.datetime.utcnow().isoformat()
         try:
             to_update = self.env['varazdin_default.route'].search(domain)
             for rec in to_update:
@@ -101,3 +105,32 @@ class Route(models.Model):
         except:
             logger.error('Fallo la sincronizacion')
             raise
+
+
+class CreateRoute(models.TransientModel):
+    _name = 'varazdin_default.generate_route'
+
+    select = fields.Selection([
+        (0, 'Todos los transportes van a todas las ubicaciones'),
+        (1, 'Los transportes van a las ubicacines por defecto')
+        ], "Seleccionar operacion"
+    )
+    date = fields.Date(
+            u'Fecha de programación',
+            required="True"
+    )
+
+    @api.multi
+    def execute(self):
+        if self.select == 0:
+            couriers = self.env['varazdin_default.courier'].search([])
+            locations = self.env['stock.location'].search([('usage', '=', 'internal')])
+            routes = self.env['varazdin_default.route']
+            for loc in locations:
+                for cour in couriers:
+                    print 'creando rutas'
+                    routes.create({
+                        'date': self.date,
+                        'location_id': loc.id,
+                        'courier_id': cour.id
+                    })

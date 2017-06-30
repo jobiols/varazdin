@@ -16,23 +16,41 @@
             </field>
         </record>
 
+        <!-- Form view  -->
+        <record model="ir.ui.view" id="create_route_view_form">
+            <field name="name">Creacion de Rutas</field>
+            <field name="model">varazdin_default.generate_route</field>
+            <field name="arch" type="xml">
+              <form string="Creación de Rutas">
+                  <header>
+                    <button string="Generar" type="object" name="execute" class="oe_highlight"/>
+<!--                    <button string="Cancelar" type="object" name="cancel" class="oe_link"/> -->
+                  </header>
+                  <group col="4">
+                        <field name="date"/>
+                        <field name="select" widget="radio"/>
+                  </group>
+              </form>
+            </field>
+        </record>
+
         <!-- List View -->
         <record id="route_list_view" model="ir.ui.view">
             <field name="name">route.list</field>
             <field name="model">varazdin_default.route</field>
             <field name="priority">1</field>
             <field name="arch" type="xml">
-                <tree string="Rutas" delete="false">
+                <tree string="Rutas" delete="true">
                     <field name="date"/>
-                    <field name="location_id"/>
                     <field name="courier_id"/>
+                    <field name="location_id"/>
                     <field name="secupack_ans"/>
                 </tree>
             </field>
         </record>
 
-        <!-- Action -->
-        <record id="action_varazdin_routes" model="ir.actions.act_window">
+        <!-- Action tree -->
+        <record id="action_varazdin_tree_routes" model="ir.actions.act_window">
             <field name="name">Rutas de los transportes</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">varazdin_default.route</field>
@@ -47,12 +65,24 @@
             </field>
         </record>
 
-        <!-- Menu -->
+        <!-- Action Form generar rutas -->
+        <record id="action_varazdin_form_routes" model="ir.actions.act_window">
+            <field name="name">Generacion de Rutas para los transportes</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">varazdin_default.generate_route</field>
+            <field name="view_mode">form</field>
+            <field name="target">inline</field>
+        </record>
 
+        <!-- Menu -->
         <menuitem id="menu_varazdin_route" name="Rutas"
                   parent="menu_varazdin_general_settings"
-                  sequence="10" action="action_varazdin_routes"
+                  sequence="10" action="action_varazdin_tree_routes"
                   groups="base.group_system"/>
 
+        <menuitem id="menu_varazdin_create_route" name="Crear Rutas"
+                  parent="menu_varazdin_general_settings"
+                  sequence="11" action="action_varazdin_form_routes"
+                  groups="base.group_system"/>
     </data>
 </odoo>

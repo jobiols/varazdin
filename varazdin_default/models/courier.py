@@ -55,21 +55,18 @@ class Courier(models.Model):
         conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
         client = SecupackClient(user=conf.default_user, password=conf.default_password, debug=True)
         if client.logged():
-            print 'logged!!!!!!!!!!!!!!!!!---'
             data = {
                 'denomination': self.name,
                 'user': self.user,
                 'active': self.active
             }
-            print 'esta es mi data', data
             # hacer alta o modificación según tenga o no el id
-            print 'este es secupack', self.secupack_id
             if self.secupack_id:
-                print 'modificacion--'
-                a = client.set_courier(data=data, id=self.secupack_id)
+                print 'alta'
+                client.set_courier(data=data, id=self.secupack_id)
             else:
-                print 'alta --- '
-                self.secupack_id = client.set_courier(data=data)
+                print 'modifica'
+                self.secupack_id = client.set_courier(data=data)._id
 
     @api.multi
     def sync(self):

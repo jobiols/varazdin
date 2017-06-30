@@ -12,7 +12,6 @@
                     <field name="name"/>
                     <field name="user"/>
                     <field name="active"/>
-                    <field name="secupack_id"/>
                   </group>
               </form>
             </field>

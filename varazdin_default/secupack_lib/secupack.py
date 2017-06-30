@@ -70,13 +70,7 @@ class SecupackClient(object):
         verb = 'courier' if id else 'couriers'
         r = requests.post(self._base_url(verb, id), data=data,
                           headers={'x-access-token': self._token})
-        if r.status_code != 200:
-            if self._debug:
-                print '--------------------------------- ERROR'
-                print 'status_code', r.status_code
-                print r.json()
-            raise Exception()
-        return False  # deberia devolver el _id
+        return bunchify(r.json()['courier'])
 
     def del_courier(self, data, id=False):
         """ Baja de courier """
@@ -110,8 +104,6 @@ class SecupackClient(object):
                          headers={'x-access-token': self._token})
         if r.status_code == 200 and r.json()['success']:
             return r.json()['packs']
-        else:
-            raise Exception(r.json())
 
     def set_courier_package(self, data):
         """ Alta de la definiciones de un viaje """
