@@ -27,7 +27,11 @@ class Location(models.Model):
     secupack_id = fields.Char(
         help=u'Hash interno de la plataforma'
     )
-
+    default_courier_id = fields.Many2one(
+        'varazdin_default.courier',
+        'Transporte por defecto',
+        help="Transporte que se usará para programar si se utiliza la opcion de transportes por defecto"
+    )
 
     """
     "date":"2017-06-25T12:57:12.965Z",

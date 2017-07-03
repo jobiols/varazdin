@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <data>
-
-
+        <record model='ir.ui.view' id='location_view_varazdin'>
+            <field name='name'>location.view.varazdin</field>
+            <field name='model'>stock.location</field>
+            <field name='inherit_id' ref='stock.view_location_form'/>
+            <field name='type'>form</field>
+            <field name='arch' type='xml'>
+                <xpath expr="//field[@name='return_location']" position="after">
+                    <field name="default_courier_id"/>
+                </xpath>
+            </field>
+        </record>
     </data>
 </odoo>

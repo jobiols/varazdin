@@ -111,3 +111,16 @@ class SecupackClient(object):
         r = requests.post(self._base_url('courierPackage'), data=data,
                           headers={'x-access-token': self._token})
         return r.json()['message']
+
+    def get_courier_by_code(self, id):
+        """ Pedido de informacion sobre los viajes """
+        if self._debug: print '-- get_courier_by_code'
+        r = requests.post(self._base_url('courierPackageByCode'), data=id,
+                          headers={'x-access-token': self._token})
+        #        return r.json()['message']
+        data = {
+            'prod': 'V10',
+            'qty': 5,
+            'op': 'entrega'
+        }
+        return data

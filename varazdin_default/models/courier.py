@@ -22,6 +22,7 @@ import logging
 
 from odoo import fields, models, api
 from odoo.addons.varazdin_default.secupack_lib.secupack import SecupackClient
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class Courier(models.Model):
         last_sync = self.env['ir.config_parameter'].get_param("courier.last.sync")
         # obtener todos los registros a actualizar
         domain = [('write_date', '>', last_sync)] if last_sync else []
-        last_sync = fields.Datetime.now()
+        last_sync = datetime.datetime.utcnow().isoformat()
 
         try:
             to_update = self.env['varazdin_default.courier'].search(domain)
