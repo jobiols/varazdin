@@ -75,45 +75,6 @@ class Route(models.Model):
     def _get_name(self):
         self.name = self.date + '/' + self.location_id.name + '/' + self.courier_id.name
 
-    @api.multi
-    def do_get_secupack(self):
-
-        def prod2id(default_code):
-            prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
-            if not prod_id:
-                logger.error('bad product code %s', default_code)
-            return prod_id
-
-        def loc2id(location):
-            source_id = self.env['stock.location'].search([('name', '=', location)])
-            if not source_id:
-                logger.error('bad source location %s', location)
-            return source_id
-
-        print 'ejecutando get secupack ----------------------------------'
-        return
-
-        for route in self:
-            conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
-            client = SecupackClient(user=conf.default_user, password=conf.default_password)
-            if client.logged():
-                logger.info('getting courier #' + conf.default_user + str(route.id))
-                data = client.get_courier_by_code(conf.default_user + route.id)
-                print data
-
-                """
-                # traducir los codigos a id's
-                source_id = loc2id(data['source'])
-                dest_id = loc2id(data['dest'])
-                moves = []
-                for move in data[]:
-                    moves.append(move)
-
-                # hacer el movimiento programatico
-                pickings = self.env['stock.picking']
-                pickings.do_programatic_simple_transfer(self, source_id, dest_id, moves, obs)
-                """
-
     @api.one
     def do_sync(self):
         logger.info('========== sync rutas')
@@ -130,9 +91,6 @@ class Route(models.Model):
                 'address': self.location_id.partner_id.street if self.location_id.partner_id else False,
                 'gpsmandatory': False,
             }
-            print '------------------------------------------'
-            print 'dato a mandar', data
-            print '------------------------------------------'
             self.secupack_ans = client.set_courier_package(data=data)
             logger.info('================>' + self.secupack_ans)
 
