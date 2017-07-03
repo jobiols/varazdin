@@ -19,6 +19,8 @@
 #
 # -----------------------------------------------------------------------------------
 import pprint
+import logging
+logger = logging.getLogger(__name__)
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -112,15 +114,14 @@ class SecupackClient(object):
                           headers={'x-access-token': self._token})
         return r.json()['message']
 
-    def get_courier_by_code(self, id):
-        """ Pedido de informacion sobre los viajes """
-        if self._debug: print '-- get_courier_by_code'
-        r = requests.post(self._base_url('courierPackageByCode'), data=id,
+    def get_package_by_code(self, id):
+        """ Descarga de datos de la plataforma """
+        if self._debug: print '-- getting package data'
+        r = requests.get(self._base_url('packagebycode',id),
                           headers={'x-access-token': self._token})
-        #        return r.json()['message']
-        data = {
-            'prod': 'V10',
-            'qty': 5,
-            'op': 'entrega'
-        }
-        return data
+        print r.url
+        return r.json()
+
+
+
+
