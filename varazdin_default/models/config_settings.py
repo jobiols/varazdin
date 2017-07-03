@@ -49,6 +49,10 @@ class AppSettings(models.TransientModel):
             help='Identificador de tarea de la plataforma',
             default_model='varazdin_default.config.settings'
     )
+    default_vasosxcaja = fields.Integer(
+            help='Cantidad de vasos por caja',
+            default_model='varazdin_default.config.settings'
+    )
 
     company_id = fields.Many2one(
             'res.company', 'Company',

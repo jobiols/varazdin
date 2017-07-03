@@ -124,7 +124,7 @@ class Route(models.Model):
             data = {
                 'date': self.date,
                 'courierId': self.courier_id.secupack_id,  # <- ID Interno de Trasportes
-                'packTypeId': conf.default_pack_type_id,   # <- ID Interno de paquetes
+                'packTypeId': conf.default_pack_type_id,  # <- ID Interno de paquetes
                 'name': self.location_id.name,
                 'code': conf.default_user + str(self.id),
                 'address': self.location_id.partner_id.street if self.location_id.partner_id else False,
@@ -136,42 +136,14 @@ class Route(models.Model):
             self.secupack_ans = client.set_courier_package(data=data)
             logger.info('================>' + self.secupack_ans)
 
-    @api.one
-    def do_download(self):
-        logger.info('========== downloading data')
-        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
-        client = SecupackClient(user=conf.default_user, password=conf.default_password)
-
-        if client.logged():
-            data = client.get_package_by_code(conf.default_user + str(self.id))
-
-            pack = data.get('pack', False)
-            if pack:
-                completed = pack.get('completed', 'False')
-                if completed:
-                    self.secupack_recv = 'Completado'
-                    actions = pack.get('actions', False)
-                    for act in actions:
-                        value = act.get('value', False)
-                        for val in value:
-                            act = val.get('action', False)
-                            cnt = val.get('cnt', False)
-                            typ = val.get('tipo', False)
-                            """
-                            movement = self.env['varazdin_default.movement'].create({
-                                action: 1,
-                                quantity:2,
-                                type_id:3,
-
-                            })
-                            """
-
     @api.multi
     def sync(self):
         """ Sincroniza el modelo con la plataforma, corre cada tanto
             lanzado por las acciones planificadas
         """
         logger.info('========== testeando sincronizacion de rutas')
+        print '----------------------------SYNC RUTAS---------------------------'
+
 
         # obtener la fecha de la última sincronizacion de envio de paquetes
         last_sync = self.env['ir.config_parameter'].get_param("route.last.sync")
@@ -190,15 +162,72 @@ class Route(models.Model):
             logger.error('Fallo la sincronizacion')
             raise
 
-        # obtener todos los registros a bajar
-        domain = [('secupack_recv', '=', False), ('secupack_ans', '=', True)]
+        # obtener todos los registros a bajar ,
+        domain = [('secupack_ans', '!=', False), ('secupack_recv', '=', False)]
+        print 'dominio de los registros a bajar', domain
         try:
             to_download = self.env['varazdin_default.route'].search(domain)
+            print 'to download',len(to_download)
             for rec in to_download:
                 rec.do_download()
         except:
             logger.error('Fallo la bajada de datos')
             raise
+
+    @api.one
+    def do_download(self):
+        logger.info('================================ downloading data')
+        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
+        client = SecupackClient(user=conf.default_user, password=conf.default_password)
+
+        if client.logged():
+            data = client.get_package_by_code(conf.default_user + str(self.id))
+            print '------------------------------------OBTENIENDO INFO ----------------------------------'
+
+            pack = data.get('pack', False)
+            if pack:
+                completed = pack.get('completed', 'False')
+                if completed:
+                    print 'paquete completo--'
+                    self.secupack_recv = 'Completado'
+                    actions = pack.get('actions', False)
+                    for act in actions:
+                        value = act.get('value', False)
+                        for val in value:
+                            print 'datos que vienen de la plataforma', val
+                            act = val.get('action', False)  # deja o retira
+                            cnt = int(val.get('cnt', False)) * conf.default_vasosxcaja  # cantidad de cajas X vasos x caja
+                            default_code = val.get('tipo', False)   # producto
+                            print 'de vuelta los datos', act, cnt, default_code
+                            """
+                            movement = self.env['varazdin_default.movement'].create({
+                                action: act,
+                                quantity:2,
+                                type_id:3,
+                            })
+                            """
+                            # deja en la ubicacion movimiento barazdin -> ubicacion
+                            if act == 'deja':
+                                source_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
+                                dest_id = self.location_id
+
+                            # retira de la ubicacion movimiento ubicacion -> barazdin
+                            if act == 'retira':
+                                source_id = self.location_id
+                                dest_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
+
+                            print 'source', source_id, 'destino', dest_id
+
+                            prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
+                            if prod_id:
+                                moves = [{
+                                    'prod_id': prod_id,
+                                    'qty': cnt
+                                }]
+                                print 'moves', moves[0]
+
+                                movement = self.env['stock.picking']
+                                movement.do_programatic_simple_transfer(source_id, dest_id, moves, ' ')
 
 
 class CreateRoute(models.TransientModel):

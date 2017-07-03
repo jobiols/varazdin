@@ -75,7 +75,7 @@ class Courier(models.Model):
             lanzado por las acciones planificadas
         """
         logger.info(u'========== Ejecutando sync transportes')
-        print '----------------------------SYNC---------------------------------------'
+        print '----------------------------SYNC TRANSPORTES---------------------------'
 
         # obtener la fecha de la última sincronizacion
         last_sync = self.env['ir.config_parameter'].get_param("courier.last.sync")

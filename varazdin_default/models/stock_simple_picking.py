@@ -51,7 +51,7 @@ class Picking(models.Model):
 
     @api.multi
     def do_programatic_simple_transfer(self, source_id, dest_id, moves, obs):
-
+        print 'entering do programatic simple tansfer --------------'
         # crear el picking
         pick = self.create({
             'name': self.env['ir.sequence'].next_by_code('varazdin.move'),

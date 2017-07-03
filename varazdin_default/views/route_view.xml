@@ -45,6 +45,7 @@
                     <field name="courier_id"/>
                     <field name="location_id"/>
                     <field name="secupack_ans"/>
+                    <field name="secupack_recv"/>
                 </tree>
             </field>
         </record>
