@@ -126,7 +126,7 @@ class Route(models.Model):
                 'courierId': self.courier_id.secupack_id,  # <- ID Interno de Trasportes
                 'packTypeId': conf.default_pack_type_id,  # <- ID Interno de paquetes
                 'name': self.location_id.name,
-                'code': conf.default_user + str(self.id),
+                'code': conf.default_user + '-' + str(self.id),
                 'address': self.location_id.partner_id.street if self.location_id.partner_id else False,
                 'gpsmandatory': False,
             }
@@ -181,7 +181,7 @@ class Route(models.Model):
         client = SecupackClient(user=conf.default_user, password=conf.default_password)
 
         if client.logged():
-            data = client.get_package_by_code(conf.default_user + str(self.id))
+            data = client.get_package_by_code(conf.default_user + '-' + str(self.id))
             print '------------------------------------OBTENIENDO INFO ----------------------------------'
 
             pack = data.get('pack', False)
