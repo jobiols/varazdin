@@ -51,7 +51,7 @@ class Courier(models.Model):
 
     @api.one
     def do_sync(self):
-        print 'ejecutando do sync'
+        logger.info(u'========== Ejecutando DO sync transportes')
         conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
         client = SecupackClient(user=conf.default_user, password=conf.default_password, debug=True)
         if client.logged():
@@ -62,10 +62,10 @@ class Courier(models.Model):
             }
             # hacer alta o modificación según tenga o no el id
             if self.secupack_id:
-                print 'alta'
+                print 'modifica'
                 client.set_courier(data=data, id=self.secupack_id)
             else:
-                print 'modifica'
+                print 'alta'
                 self.secupack_id = client.set_courier(data=data)._id
 
     @api.multi
@@ -73,11 +73,12 @@ class Courier(models.Model):
         """ Sincroniza el modelo con la plataforma, corre cada tanto
             lanzado por las acciones planificadas
         """
-        logger.info(u'Ejecutando sync')
+        logger.info(u'========== Ejecutando sync transportes')
         print '----------------------------SYNC---------------------------------------'
 
         # obtener la fecha de la última sincronizacion
         last_sync = self.env['ir.config_parameter'].get_param("courier.last.sync")
+
         # obtener todos los registros a actualizar
         domain = [('write_date', '>', last_sync)] if last_sync else []
         last_sync = fields.Datetime.now()
@@ -92,3 +93,4 @@ class Courier(models.Model):
         except:
             raise
             logger.error(u'Fallo la sincronizacion')
+

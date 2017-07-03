@@ -25,7 +25,7 @@ from odoo.addons.varazdin_default.secupack_lib.secupack import SecupackClient
 import datetime
 
 logger = logging.getLogger(__name__)
-
+# receta 594e853c0d8d08609f9b9f3d
 
 class Route(models.Model):
     _name = 'varazdin_default.route'
@@ -55,6 +55,15 @@ class Route(models.Model):
             help='Transporte que realiza la visita',
             required=True
     )
+    secupack_recv = fields.Char(
+            help='Flag de info recibida'
+    )          
+#    movement_ids = fields.One2many(
+#            'varazdin_default.movement',
+#            'route_id',
+#            help='Movimientos de stock'
+#    )
+
 
     @api.one
     def _get_name(self):
@@ -62,11 +71,10 @@ class Route(models.Model):
 
     @api.one
     def do_sync(self):
-        print 'ejecutando do sync'
+        logger.info('========== sync rutas')
         conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
         client = SecupackClient(user=conf.default_user, password=conf.default_password)
-
-        print '>>>>>>>>>', self.date
+	
 #        dt = datetime.strptime(self.date, '%Y-%m-%d').utcnow().isoformat
         if client.logged():
             data = {
@@ -74,27 +82,58 @@ class Route(models.Model):
                 'courierId': self.courier_id.secupack_id,  # <- ID Interno de Trasportes
                 'packTypeId': conf.default_pack_type_id,  # <- ID Interno de paquetes
                 'name': self.location_id.name,
-                'code': datetime.datetime.utcnow().isoformat() + str(self.id),
+                'code': str(self.id),
                 'address': self.location_id.partner_id.street if self.location_id.partner_id else False,
                 'gpsmandatory': False,
             }
-            print '------------------'
-            print data
             self.secupack_ans = client.set_courier_package(data=data)
+            logger.info('===>' + self.secupack_ans)
+
+    @api.one
+    def do_download(self):
+        logger.info('========== downloading data')
+        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
+        client = SecupackClient(user=conf.default_user, password=conf.default_password)
+	
+        if client.logged():
+            data = client.get_package_by_code(self.id)
+            
+            pack = data.get('pack',False)
+            if pack:
+                completed = pack.get('completed','False')
+                if completed:
+                    self.secupack_recv = 'Completado'
+                    actions = pack.get('actions',False)
+                    for act in actions:
+                        value = act.get('value',False)
+                        for val in value:
+                            act = val.get('action',False)
+                            cnt = val.get('cnt',False)
+                            typ = val.get('tipo',False)
+                            """
+                            movement = self.env['varazdin_default.movement'].create({
+                                action: 1,
+                                quantity:2, 
+                                type_id:3, 
+                                
+                            })
+                            """
+
+
 
     @api.multi
     def sync(self):
         """ Sincroniza el modelo con la plataforma, corre cada tanto
             lanzado por las acciones planificadas
         """
-        logger.info('Ejecutando sync')
-        print '-------------------------------------------------------------------'
+        logger.info('========== testeando sincronizacion de paquetes')
 
-        # obtener la fecha de la última sincronizacion
+        # obtener la fecha de la última sincronizacion de envio de paquetes
         last_sync = self.env['ir.config_parameter'].get_param("route.last.sync")
-        # obtener todos los registros a actualizar
-        domain = [('write_date', '>', last_sync)] if last_sync else []
-        last_sync = datetime.datetime.utcnow().isoformat()
+
+        # obtener todos los registros a subir
+        domain = [('write_date', '>', last_sync),('secupack_ans','=', False)] if last_sync else []
+        last_sync = fields.Datetime.now() # datetime.datetime.utcnow().isoformat()
         try:
             to_update = self.env['varazdin_default.route'].search(domain)
             for rec in to_update:
@@ -105,6 +144,20 @@ class Route(models.Model):
         except:
             logger.error('Fallo la sincronizacion')
             raise
+
+
+        # obtener todos los registros a bajar
+        domain = [('secupack_recv','=', False)]
+        try:
+            to_download = self.env['varazdin_default.route'].search(domain)
+            for rec in to_download:
+                rec.do_download()
+        except:
+            logger.error('Fallo la bajada de datos')
+            raise
+
+
+
 
 
 class CreateRoute(models.TransientModel):

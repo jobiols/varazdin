@@ -19,6 +19,8 @@
 #
 # -----------------------------------------------------------------------------------
 import pprint
+import logging
+logger = logging.getLogger(__name__)
 
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -66,10 +68,12 @@ class SecupackClient(object):
 
     def set_courier(self, data, id=False):
         """ Alta o Modifica courier """
+        logger.info('entering set_courier ----------->> ')
         if self._debug: print '-- setting courier with', data, id, self._token
         verb = 'courier' if id else 'couriers'
         r = requests.post(self._base_url(verb, id), data=data,
                           headers={'x-access-token': self._token})
+        logger.info('set_courier ----------- '+r.text)
         return bunchify(r.json()['courier'])
 
     def del_courier(self, data, id=False):
@@ -111,3 +115,15 @@ class SecupackClient(object):
         r = requests.post(self._base_url('courierPackage'), data=data,
                           headers={'x-access-token': self._token})
         return r.json()['message']
+
+    def get_package_by_code(self, id):
+        """ Descarga de datos de la plataforma """
+        if self._debug: print '-- getting package data'
+        r = requests.get(self._base_url('packagebycode',id),
+                          headers={'x-access-token': self._token})
+        print r.url
+        return r.json()
+
+
+
+
