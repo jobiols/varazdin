@@ -29,7 +29,6 @@
             <field name="arch" type="xml">
                 <form string="Transfer">
                 <header>
-                    <button name="test_move" string="test movimiento programatico" type="object" class="oe_highlight" />
                     <button name="action_confirm" states="draft" string="Mark as Todo" type="object" class="oe_highlight" groups="base.group_user"/>
                     <button name="action_assign" states="confirmed,waiting" string="Reserve" type="object" class="oe_highlight" groups="base.group_user"/>
                     <button name="action_assign" states="partially_available" string="Recheck Availability" type="object" groups="base.group_user"/>
