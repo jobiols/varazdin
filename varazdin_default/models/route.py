@@ -23,6 +23,7 @@ import logging
 from odoo import api, fields, models
 from odoo.addons.varazdin_default.secupack_lib.secupack import SecupackClient
 from odoo.exceptions import Warning
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,9 @@ class Route(models.Model):
     secupack_recv = fields.Char(
             help='Flag de info recibida'
     )
+    secupack_obs = fields.Char(
+            help='Observaciones'
+    )
     #    movement_ids = fields.One2many(
     #            'varazdin_default.movement',
     #            'route_id',
@@ -88,7 +92,7 @@ class Route(models.Model):
 
         if client.logged():
             data = {
-                'date': self.date,
+                'date': self.date + 'T12:00:00.000000',  # poner las doce del mediodia
                 'courierId': self.courier_id.secupack_id,  # <- ID Interno de Trasportes
                 'packTypeId': conf.default_pack_type_id,  # <- ID Interno de paquetes
                 'name': self.location_id.name,
@@ -97,6 +101,7 @@ class Route(models.Model):
                 'gpsmandatory': False,
                 'notes': notes
             }
+
             self.secupack_ans = client.set_courier_package(data=data)
             logger.info('================>' + self.secupack_ans)
 
@@ -112,8 +117,10 @@ class Route(models.Model):
         last_sync = self.env['ir.config_parameter'].get_param("route.last.sync")
 
         # obtener todos los registros a subir
-        domain = [('write_date', '>', last_sync), ('secupack_ans', '=', False)] if last_sync else []
-        last_sync = fields.Datetime.now()  # datetime.datetime.utcnow().isoformat()
+        domain = [('write_date', '>', last_sync),
+                  ('secupack_ans', '=', False),
+                  ('date', '=', datetime.date.today().isoformat())] if last_sync else []
+        last_sync = fields.Datetime.now()
         try:
             to_update = self.env['varazdin_default.route'].search(domain)
             for rec in to_update:
@@ -126,10 +133,14 @@ class Route(models.Model):
             raise
 
         # obtener todos los registros a bajar ,
-        domain = [('secupack_ans', '!=', False), ('secupack_recv', '=', False)]
+        domain = [('secupack_ans', '!=', False),
+                  ('secupack_recv', '=', False),
+                  ('date', '=', datetime.date.today().isoformat())]
         try:
             to_download = self.env['varazdin_default.route'].search(domain)
             for rec in to_download:
+                print '>>>', rec.secupack_ans, rec.secupack_recv, rec.date
+                print '>>>', datetime.date.today().isoformat()
                 rec.do_download()
         except:
             logger.error('Fallo la bajada de datos')
@@ -137,6 +148,14 @@ class Route(models.Model):
 
     @api.one
     def do_download(self):
+        def get_delivery(lista):
+            print '---------------------GET DELIVERY--------------------------------', lista
+            ret = ' '
+            for element in lista:
+                if element['description'] == 'Observacion':
+                    ret = element['value']
+            return ret
+
         logger.info('================================ downloading data')
         conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
         client = SecupackClient(user=conf.default_user, password=conf.default_password)
@@ -149,38 +168,39 @@ class Route(models.Model):
             if pack:
                 completed = pack.get('completed', 'False')
                 if completed:
-                    print 'paquete completo--'
                     self.secupack_recv = 'Completado'
+                    self.secupack_obs = get_delivery(pack.get('delivery', False))
                     actions = pack.get('actions', False)
                     for act in actions:
                         value = act.get('value', False)
-                        for val in value:
-                            print 'datos que vienen de la plataforma', val
-                            act = val.get('action', False)  # deja o retira
-                            cajas = int(val.get('cnt', False))  # cantidad de cajas
-                            default_code = val.get('tipo', False)   # producto
+                        if value is not None:
+                            for val in value:
+                                print 'datos que vienen de la plataforma', val
+                                act = val.get('action', False)  # deja o retira
+                                cajas = int(val.get('cnt', False))  # cantidad de cajas
+                                default_code = val.get('tipo', False)   # producto
 
-                            # deja en la ubicacion movimiento barazdin -> ubicacion
-                            if act == 'deja':
-                                source_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
-                                dest_id = self.location_id
+                                # deja en la ubicacion movimiento barazdin -> ubicacion
+                                if act == 'deja':
+                                    source_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
+                                    dest_id = self.location_id
 
-                            # retira de la ubicacion movimiento ubicacion -> barazdin
-                            if act == 'retira':
-                                source_id = self.location_id
-                                dest_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
+                                # retira de la ubicacion movimiento ubicacion -> barazdin
+                                if act == 'retira':
+                                    source_id = self.location_id
+                                    dest_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
 
-                            prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
-                            print '===================================== VASOS X CAJA', prod_id.vasos_x_caja
-                            if prod_id:
-                                moves = [{
-                                    'prod_id': prod_id,
-                                    'qty': cajas * prod_id.vasos_x_caja
-                                }]
-                                print '=============================== TOTAL VASOS ', cajas * prod_id.vasos_x_caja
+                                prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
+                                print '===================================== VASOS X CAJA', prod_id.vasos_x_caja
+                                if prod_id:
+                                    moves = [{
+                                        'prod_id': prod_id,
+                                        'qty': cajas * prod_id.vasos_x_caja
+                                    }]
+                                    print '=============================== TOTAL VASOS ', cajas * prod_id.vasos_x_caja
 
-                                movement = self.env['stock.picking']
-                                movement.do_programatic_simple_transfer(source_id, dest_id, moves, ' ')
+                                    movement = self.env['stock.picking']
+                                    movement.do_programatic_simple_transfer(source_id, dest_id, moves, ' ')
 
 
 class CreateRoute(models.TransientModel):
@@ -204,8 +224,11 @@ class CreateRoute(models.TransientModel):
             locations = self.env['stock.location'].search([('usage', '=', 'internal')])
             routes = self.env['varazdin_default.route']
             for loc in locations:
+                print loc.name
+                # No programamos la ubicacion Varazdin
+                if loc.name == 'Varazdin':
+                    continue
                 for cour in couriers:
-                    print 'creando rutas'
                     routes.create({
                         'date': self.date,
                         'location_id': loc.id,
