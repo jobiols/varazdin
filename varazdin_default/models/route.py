@@ -81,6 +81,11 @@ class Route(models.Model):
         conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
         client = SecupackClient(user=conf.default_user, password=conf.default_password)
 
+        notes = ' '
+        for contact in self.location_id.partner_id.child_ids:
+            notes = contact.name + (' - '+contact.phone if contact.phone else ' - '+contact.mobile if contact.mobile else ' ')
+            break
+
         if client.logged():
             data = {
                 'date': self.date,
@@ -88,8 +93,9 @@ class Route(models.Model):
                 'packTypeId': conf.default_pack_type_id,  # <- ID Interno de paquetes
                 'name': self.location_id.name,
                 'code': conf.default_user + '-' + str(self.id),
-                'address': self.location_id.partner_id.street if self.location_id.partner_id else False,
+                'address': self.location_id.partner_id.street if self.location_id.partner_id else ' ',
                 'gpsmandatory': False,
+                'notes': notes
             }
             self.secupack_ans = client.set_courier_package(data=data)
             logger.info('================>' + self.secupack_ans)
