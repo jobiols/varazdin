@@ -63,10 +63,8 @@ class Courier(models.Model):
             }
             # hacer alta o modificación según tenga o no el id
             if self.secupack_id:
-                print 'modifica'
                 client.set_courier(data=data, id=self.secupack_id)
             else:
-                print 'alta'
                 self.secupack_id = client.set_courier(data=data)._id
 
     @api.multi

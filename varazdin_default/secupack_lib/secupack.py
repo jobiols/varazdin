@@ -96,7 +96,6 @@ class SecupackClient(object):
         if self._debug: print '-- setting packtypes'
         r = requests.post(self._base_url('packtypes'), data,
                           headers={'x-access-token': self._token})
-        print r.json()
         return r.status_code == 200
 
     def get_courier_packages(self, filter):

@@ -18,12 +18,12 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # -----------------------------------------------------------------------------------
+import datetime
 import logging
 
 from odoo import api, fields, models
 from odoo.addons.varazdin_default.secupack_lib.secupack import SecupackClient
 from odoo.exceptions import Warning
-import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +59,7 @@ class Route(models.Model):
             required=True
     )
     secupack_recv = fields.Char(
+            'Recibido',
             help='Flag de info recibida'
     )
     secupack_obs = fields.Char(
@@ -87,7 +88,8 @@ class Route(models.Model):
 
         notes = ' '
         for contact in self.location_id.partner_id.child_ids:
-            notes = contact.name + (' - '+contact.phone if contact.phone else ' - '+contact.mobile if contact.mobile else ' ')
+            notes = contact.name + (
+            ' - ' + contact.phone if contact.phone else ' - ' + contact.mobile if contact.mobile else ' ')
             break
 
         if client.logged():
@@ -102,24 +104,23 @@ class Route(models.Model):
                 'notes': notes
             }
 
-            self.secupack_ans = client.set_courier_package(data=data)
-            logger.info('================>' + self.secupack_ans)
+            self.secupack_ans = str(self.id) + ' ' + client.set_courier_package(data=data)
+            logger.info('================>' + str(self.id) + ' ' + self.secupack_ans)
 
     @api.multi
     def sync(self):
         """ Sincroniza el modelo con la plataforma, corre cada tanto
             lanzado por las acciones planificadas
         """
-        logger.info('========== testeando sincronizacion de rutas')
-        print '----------------------------SYNC RUTAS---------------------------'
+        logger.info('========== Testeando sincronizacion de rutas')
 
         # obtener la fecha de la última sincronizacion de envio de paquetes
         last_sync = self.env['ir.config_parameter'].get_param("route.last.sync")
 
+        # ,('date', '=', datetime.date.today().isoformat())
         # obtener todos los registros a subir
         domain = [('write_date', '>', last_sync),
-                  ('secupack_ans', '=', False),
-                  ('date', '=', datetime.date.today().isoformat())] if last_sync else []
+                  ('secupack_ans', '=', False)] if last_sync else []
         last_sync = fields.Datetime.now()
         try:
             to_update = self.env['varazdin_default.route'].search(domain)
@@ -139,8 +140,6 @@ class Route(models.Model):
         try:
             to_download = self.env['varazdin_default.route'].search(domain)
             for rec in to_download:
-                print '>>>', rec.secupack_ans, rec.secupack_recv, rec.date
-                print '>>>', datetime.date.today().isoformat()
                 rec.do_download()
         except:
             logger.error('Fallo la bajada de datos')
@@ -149,7 +148,6 @@ class Route(models.Model):
     @api.one
     def do_download(self):
         def get_delivery(lista):
-            print '---------------------GET DELIVERY--------------------------------', lista
             ret = ' '
             for element in lista:
                 if element['description'] == 'Observacion':
@@ -162,23 +160,21 @@ class Route(models.Model):
 
         if client.logged():
             data = client.get_package_by_code(conf.default_user + '-' + str(self.id))
-            print '------------------------------------OBTENIENDO INFO ----------------------------------'
-
             pack = data.get('pack', False)
             if pack:
                 completed = pack.get('completed', 'False')
                 if completed:
-                    self.secupack_recv = 'Completado'
+                    self.secupack_recv = 'Ok-' + str(self.id)
                     self.secupack_obs = get_delivery(pack.get('delivery', False))
                     actions = pack.get('actions', False)
                     for act in actions:
                         value = act.get('value', False)
                         if value is not None:
                             for val in value:
-                                print 'datos que vienen de la plataforma', val
+                                print '===== datos que vienen de la plataforma', val
                                 act = val.get('action', False)  # deja o retira
                                 cajas = int(val.get('cnt', False))  # cantidad de cajas
-                                default_code = val.get('tipo', False)   # producto
+                                default_code = val.get('tipo', False)  # producto
 
                                 # deja en la ubicacion movimiento barazdin -> ubicacion
                                 if act == 'deja':
@@ -191,14 +187,11 @@ class Route(models.Model):
                                     dest_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
 
                                 prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
-                                print '===================================== VASOS X CAJA', prod_id.vasos_x_caja
                                 if prod_id:
                                     moves = [{
                                         'prod_id': prod_id,
                                         'qty': cajas * prod_id.vasos_x_caja
                                     }]
-                                    print '=============================== TOTAL VASOS ', cajas * prod_id.vasos_x_caja
-
                                     movement = self.env['stock.picking']
                                     movement.do_programatic_simple_transfer(source_id, dest_id, moves, ' ')
 
@@ -224,7 +217,6 @@ class CreateRoute(models.TransientModel):
             locations = self.env['stock.location'].search([('usage', '=', 'internal')])
             routes = self.env['varazdin_default.route']
             for loc in locations:
-                print loc.name
                 # No programamos la ubicacion Varazdin
                 if loc.name == 'Varazdin':
                     continue
@@ -247,7 +239,6 @@ class CreateRoute(models.TransientModel):
                     raise Warning('Todas las ubicaciones deben tener un transporte por defecto')
 
             for loc in locations:
-                print 'creando rutas'
                 routes.create({
                     'date': self.date,
                     'location_id': loc.id,

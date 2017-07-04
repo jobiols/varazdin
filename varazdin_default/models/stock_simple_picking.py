@@ -51,7 +51,6 @@ class Picking(models.Model):
 
     @api.multi
     def do_programatic_simple_transfer(self, source_id, dest_id, moves, obs):
-        print 'entering do programatic simple tansfer --------------'
         # crear el picking
         pick = self.create({
             'name': self.env['ir.sequence'].next_by_code('varazdin.move'),
@@ -125,22 +124,6 @@ class Picking(models.Model):
                 view = self.env.ref('stock.view_immediate_transfer')
                 wiz = self.env['stock.immediate.transfer'].create({'pick_id': pick.id})
 
-                """
-                # TDE FIXME: a return in a loop, what a good idea. Really.
-                return {
-                    'name': _('Immediate Transfer?'),
-                    'type': 'ir.actions.act_window',
-                    'view_type': 'form',
-                    'view_mode': 'form',
-                    'res_model': 'stock.immediate.transfer',
-                    'views': [(view.id, 'form')],
-                    'view_id': view.id,
-                    'target': 'new',
-                    'res_id': wiz.id,
-                    'context': self.env.context,
-                }
-                """
-
                 # If still in draft => confirm and assign
                 if wiz.pick_id.state == 'draft':
                     wiz.pick_id.action_confirm()
@@ -159,34 +142,6 @@ class Picking(models.Model):
                 wiz.pick_id.do_transfer()
 
             return
-            """
-            # Check backorder should check for other barcodes
-            if pick.check_backorder():
-                view = self.env.ref('stock.view_backorder_confirmation')
-                wiz = self.env['stock.backorder.confirmation'].create({'pick_id': pick.id})
-                # TDE FIXME: same reamrk as above actually
-                return {
-                    'name': _('Create Backorder?'),
-                    'type': 'ir.actions.act_window',
-                    'view_type': 'form',
-                    'view_mode': 'form',
-                    'res_model': 'stock.backorder.confirmation',
-                    'views': [(view.id, 'form')],
-                    'view_id': view.id,
-                    'target': 'new',
-                    'res_id': wiz.id,
-                    'context': self.env.context,
-                }
-            for operation in pick.pack_operation_ids:
-                if operation.qty_done < 0:
-                    raise UserError(_('No negative quantities allowed'))
-                if operation.qty_done > 0:
-                    operation.write({'product_qty': operation.qty_done})
-                else:
-                    pack_operations_delete |= operation
-            if pack_operations_delete:
-                pack_operations_delete.unlink()
-            """
 
         print 'antes de do transfer >>>>>>>>>>>>>>>>>>>>>>'
         self.do_transfer()
