@@ -108,7 +108,6 @@ class Route(models.Model):
         logger.info('========== testeando sincronizacion de rutas')
         print '----------------------------SYNC RUTAS---------------------------'
 
-
         # obtener la fecha de la última sincronizacion de envio de paquetes
         last_sync = self.env['ir.config_parameter'].get_param("route.last.sync")
 
@@ -128,10 +127,8 @@ class Route(models.Model):
 
         # obtener todos los registros a bajar ,
         domain = [('secupack_ans', '!=', False), ('secupack_recv', '=', False)]
-        print 'dominio de los registros a bajar', domain
         try:
             to_download = self.env['varazdin_default.route'].search(domain)
-            print 'to download',len(to_download)
             for rec in to_download:
                 rec.do_download()
         except:
@@ -160,16 +157,9 @@ class Route(models.Model):
                         for val in value:
                             print 'datos que vienen de la plataforma', val
                             act = val.get('action', False)  # deja o retira
-                            cnt = int(val.get('cnt', False)) * conf.default_vasosxcaja  # cantidad de cajas X vasos x caja
+                            cajas = int(val.get('cnt', False))  # cantidad de cajas
                             default_code = val.get('tipo', False)   # producto
-                            print 'de vuelta los datos', act, cnt, default_code
-                            """
-                            movement = self.env['varazdin_default.movement'].create({
-                                action: act,
-                                quantity:2,
-                                type_id:3,
-                            })
-                            """
+
                             # deja en la ubicacion movimiento barazdin -> ubicacion
                             if act == 'deja':
                                 source_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
@@ -180,15 +170,14 @@ class Route(models.Model):
                                 source_id = self.location_id
                                 dest_id = self.env['stock.location'].search([('name', '=', 'Varazdin')])
 
-                            print 'source', source_id, 'destino', dest_id
-
                             prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
+                            print '===================================== VASOS X CAJA', prod_id.vasos_x_caja
                             if prod_id:
                                 moves = [{
                                     'prod_id': prod_id,
-                                    'qty': cnt
+                                    'qty': cajas * prod_id.vasos_x_caja
                                 }]
-                                print 'moves', moves[0]
+                                print '=============================== TOTAL VASOS ', cajas * prod_id.vasos_x_caja
 
                                 movement = self.env['stock.picking']
                                 movement.do_programatic_simple_transfer(source_id, dest_id, moves, ' ')

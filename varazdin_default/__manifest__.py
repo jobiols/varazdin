@@ -18,7 +18,8 @@ Varazdin
         'views/config_settings_view.xml',
         'views/courier_view.xml',
         'views/location_view.xml',
-        'views/route_view.xml'
+        'views/route_view.xml',
+        'views/product_view.xml',
     ],
     'demo': [
 

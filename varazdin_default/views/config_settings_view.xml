@@ -20,10 +20,6 @@
                     <group string="Datos de la plataforma" name="platform_data">
                         <field name="default_pack_type_id"/>
                     </group>
-                    <group string="Configuracion general" name="general_config">
-                        <field name="default_vasosxcaja" string="Vasos por caja"/>
-                    </group>
-
                 </form>
             </field>
         </record>

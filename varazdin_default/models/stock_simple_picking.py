@@ -64,7 +64,7 @@ class Picking(models.Model):
         })
 
         for move in moves:
-            logger.info('source %s, dest %s, prod %s, qty %s, %s',
+            logger.info('== MOVIMIENTO == source %s, dest %s, prod %s, qty %s, %s',
                         source_id.name,
                         dest_id.name,
                         move['prod_id'].name,

@@ -6,3 +6,4 @@ from . import courier
 from . import location
 from . import route
 #from . import movement
+from . import res_product
