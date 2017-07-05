@@ -28,7 +28,8 @@ import requests
 from bunch import bunchify
 
 API_VERSION = 'v1.0'
-API_ENDPOINT = 'https://rest.secupack.com.ar/api'
+#API_ENDPOINT = 'https://rest.secupack.com.ar/api'
+API_ENDPOINT = 'http://52.67.135.54/api'
 
 
 class SecupackClient(object):
@@ -96,6 +97,7 @@ class SecupackClient(object):
         if self._debug: print '-- setting packtypes'
         r = requests.post(self._base_url('packtypes'), data,
                           headers={'x-access-token': self._token})
+        print r.json()
         return r.status_code == 200
 
     def get_courier_packages(self, filter):
