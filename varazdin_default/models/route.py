@@ -154,7 +154,6 @@ class Route(models.Model):
                     ret = element['value']
             return ret
 
-        logger.info('================================ downloading data')
         conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
         client = SecupackClient(user=conf.default_user, password=conf.default_password)
 
@@ -164,6 +163,7 @@ class Route(models.Model):
             if pack:
                 completed = pack.get('completed', 'False')
                 if completed:
+                    logger.info('================================ downloading data')
                     self.secupack_recv = 'Ok-' + str(self.id)
                     self.secupack_obs = get_delivery(pack.get('delivery', False))
                     actions = pack.get('actions', False)
