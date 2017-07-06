@@ -28,8 +28,8 @@ import requests
 from bunch import bunchify
 
 API_VERSION = 'v1.0'
-#API_ENDPOINT = 'https://rest.secupack.com.ar/api'
-API_ENDPOINT = 'http://52.67.135.54/api'
+API_ENDPOINT = 'https://rest.secupack.com.ar/api'
+#API_ENDPOINT = 'http://52.67.135.54/api'
 
 
 class SecupackClient(object):

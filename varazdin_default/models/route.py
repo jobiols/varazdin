@@ -82,7 +82,7 @@ class Route(models.Model):
 
     @api.one
     def do_sync(self):
-        logger.info('========== sync rutas')
+        logger.info('========== sincronizando rutas')
         conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
         client = SecupackClient(user=conf.default_user, password=conf.default_password)
 
@@ -96,7 +96,7 @@ class Route(models.Model):
             data = {
                 'date': self.date + 'T12:00:00.000000',  # poner las doce del mediodia
                 'courierId': self.courier_id.secupack_id,  # <- ID Interno de Trasportes
-                'packTypeId': conf.default_pack_type_id,  # <- ID Interno de paquetes
+                'packTypeId': conf.default_pack_type_id,   # <- ID Interno de paquetes
                 'name': self.location_id.name,
                 'code': conf.default_user + '-' + str(self.id),
                 'address': self.location_id.partner_id.street if self.location_id.partner_id else ' ',
