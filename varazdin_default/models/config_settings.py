@@ -35,17 +35,17 @@ class AppSettings(models.TransientModel):
         res = super(AppSettings, self).default_get(fields)
         return res
 
-    default_user = fields.Char(
+    user = fields.Char(
             help='Usuario de acceso a la plataforma',
             default_model='varazdin_default.config.settings'
     )
 
-    default_password = fields.Char(
+    password = fields.Char(
             help='Contraseña de acceso a la plataforma',
             default_model='varazdin_default.config.settings'
     )
 
-    default_pack_type_id = fields.Char(
+    pack_type_id = fields.Char(
             help='Identificador de tarea de la plataforma',
             default_model='varazdin_default.config.settings'
     )
@@ -55,8 +55,32 @@ class AppSettings(models.TransientModel):
             default=lambda self: self.env.user.company_id, required=True)
 
     @api.one
+    def set_user(self):
+        self.env['ir.config_parameter'].set_param('user', self.user or '')
+
+    @api.one
+    def get_user(self, fields):
+        self.user = self.env['ir.config_parameter'].get_param('user', default=False)
+
+    @api.one
+    def set_password(self):
+        self.env['ir.config_parameter'].set_param('password', self.password or '')
+
+    @api.one
+    def get_password(self, fields):
+        self.password = self.env['ir.config_parameter'].get_param('password', default=False)
+
+    @api.one
+    def set_pack_type_id(self):
+        self.env['ir.config_parameter'].set_param('pack_type_id', self.pack_type_id or '')
+
+    @api.one
+    def get_pack_type_id(self, fields):
+        self.pack_type_id = self.env['ir.config_parameter'].get_param('pack_type_id', default=False)
+
+    @api.one
     def test_connection(self):
-        client = SecupackClient(user=self.default_user, password=self.default_password)
+        client = SecupackClient(user=self.user, password=self.password)
         if client.logged():
             raise Warning(u'Conexión exitosa')
         else:

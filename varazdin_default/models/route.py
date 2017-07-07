@@ -83,8 +83,12 @@ class Route(models.Model):
     @api.one
     def do_sync(self):
         logger.info('========== sincronizando rutas')
-        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
-        client = SecupackClient(user=conf.default_user, password=conf.default_password)
+#        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
+
+        user = self.env['ir.config_parameter'].get_param('user', 'demo_user')
+        password = self.env['ir.config_parameter'].get_param('password', 'pwd')
+        pack_type_id = self.env['ir.config_parameter'].get_param('pack_type_id', 'pwd')
+        client = SecupackClient(user=user, password=password)
 
         notes = ' '
         for contact in self.location_id.partner_id.child_ids:
@@ -96,9 +100,9 @@ class Route(models.Model):
             data = {
                 'date': self.date + 'T12:00:00.000000',  # poner las doce del mediodia
                 'courierId': self.courier_id.secupack_id,  # <- ID Interno de Trasportes
-                'packTypeId': conf.default_pack_type_id,   # <- ID Interno de paquetes
+                'packTypeId': pack_type_id,   # <- ID Interno de paquetes
                 'name': self.location_id.name,
-                'code': conf.default_user + '-' + str(self.id),
+                'code': user + '-' + str(self.id),
                 'address': self.location_id.partner_id.street if self.location_id.partner_id else ' ',
                 'gpsmandatory': False,
                 'notes': notes
@@ -154,11 +158,14 @@ class Route(models.Model):
                     ret = element['value']
             return ret
 
-        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
-        client = SecupackClient(user=conf.default_user, password=conf.default_password)
+#        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
+
+        user = self.env['ir.config_parameter'].get_param('user', 'demo_user')
+        password = self.env['ir.config_parameter'].get_param('password', 'pwd')
+        client = SecupackClient(user=user, password=password)
 
         if client.logged():
-            data = client.get_package_by_code(conf.default_user + '-' + str(self.id))
+            data = client.get_package_by_code(user + '-' + str(self.id))
             pack = data.get('pack', False)
             if pack:
                 completed = pack.get('completed', 'False')

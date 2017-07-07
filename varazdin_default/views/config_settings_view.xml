@@ -12,13 +12,13 @@
                     </header>
 
                     <group string="Autenticación" name="autentication">
-                        <field name="default_user"/>
-                        <field name="default_password" password="True"/>
+                        <field name="user"/>
+                        <field name="password" password="True"/>
                     </group>
                     <button string="Testear la conexión" type="object" name="test_connection" class="oe_highlight"/>
 
                     <group string="Datos de la plataforma" name="platform_data">
-                        <field name="default_pack_type_id"/>
+                        <field name="pack_type_id"/>
                     </group>
                 </form>
             </field>

@@ -14,15 +14,13 @@ class Picking(models.Model):
     simple_qty = fields.Float('Cantidad', compute='_get_simple_qty')
 
     @api.multi
-    def test_move(self):
+    def test_move(self, source, dest):
         logger.info('New TEST Move')
 
-        source = 'varazdin'
-        dest = 'La Vasca'
-        obs = 'ADK-FFD-888*-'
+        obs = 'ADK-FFD-888'
 
         moves = []
-        default_code = 'V1'
+        default_code = '30cl Gris'
         prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
         if not prod_id:
             logger.error('bad product code %s', default_code)
@@ -31,7 +29,7 @@ class Picking(models.Model):
             'qty': 34
         })
 
-        default_code = 'V100'
+        default_code = '50cl Azul'
         prod_id = self.env['product.product'].search([('default_code', '=', default_code)])
         if not prod_id:
             logger.error('bad product code %s', default_code)
@@ -40,10 +38,12 @@ class Picking(models.Model):
             'qty': 200
         })
 
+        print 'source', source
         source_id = self.env['stock.location'].search([('name', '=', source)])
         if not source_id:
             logger.error('bad source location %s', source)
 
+        print 'dest', dest
         dest_id = self.env['stock.location'].search([('name', '=', dest)])
         if not source_id:
             logger.error('bad destination location %s', dest)

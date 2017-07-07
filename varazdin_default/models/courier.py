@@ -53,8 +53,10 @@ class Courier(models.Model):
     @api.one
     def do_sync(self):
         logger.info(u'========== Ejecutando DO sync transportes')
-        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
-        client = SecupackClient(user=conf.default_user, password=conf.default_password, debug=True)
+#        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
+        user = self.env['ir.config_parameter'].get_param('user', 'demo_user')
+        password = self.env['ir.config_parameter'].get_param('password', 'pwd')
+        client = SecupackClient(user=user, password=password)
         if client.logged():
             data = {
                 'denomination': self.name,
