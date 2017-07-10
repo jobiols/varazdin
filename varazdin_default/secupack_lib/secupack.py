@@ -18,8 +18,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # -----------------------------------------------------------------------------------
-import pprint
 import logging
+import pprint
+
 logger = logging.getLogger(__name__)
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -29,7 +30,9 @@ from bunch import bunchify
 
 API_VERSION = 'v1.0'
 API_ENDPOINT = 'https://rest.secupack.com.ar/api'
-#API_ENDPOINT = 'http://52.67.135.54/api'
+
+
+# API_ENDPOINT = 'http://52.67.135.54/api'
 
 
 class SecupackClient(object):
@@ -118,11 +121,16 @@ class SecupackClient(object):
     def get_package_by_code(self, id):
         """ Descarga de datos de la plataforma """
         if self._debug: print '-- getting package data'
-        r = requests.get(self._base_url('packagebycode',id),
-                          headers={'x-access-token': self._token})
+        r = requests.get(self._base_url('packagebycode', id),
+                         headers={'x-access-token': self._token})
         print r.url
         return r.json()
 
+    def del_package(self, id):
+        """ Elimina un paquete """
 
-
-
+        print id
+        r = requests.delete(self._base_url('packtype', id),
+                         headers={'x-access-token': self._token})
+        print r.url
+        print r.json()

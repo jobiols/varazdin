@@ -83,7 +83,6 @@ class Route(models.Model):
     @api.one
     def do_sync(self):
         logger.info('========== sincronizando rutas')
-#        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
 
         user = self.env['ir.config_parameter'].get_param('user', 'demo_user')
         password = self.env['ir.config_parameter'].get_param('password', 'pwd')
@@ -157,8 +156,6 @@ class Route(models.Model):
                 if element['description'] == 'Observacion':
                     ret = element['value']
             return ret
-
-#        conf = self.env['varazdin_default.config.settings'].search([], order='id desc', limit=1)[0]
 
         user = self.env['ir.config_parameter'].get_param('user', 'demo_user')
         password = self.env['ir.config_parameter'].get_param('password', 'pwd')
